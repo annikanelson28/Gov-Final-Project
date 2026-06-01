@@ -9,38 +9,6 @@ Runs each article through Claude, OpenAI (ChatGPT), and Grok using an IDENTICAL
 prompt and configuration, writing every summary to a tidy CSV ready for
 annotation and BERTScore analysis.
 
-----------------------------------------------------------------------------
-WHY THE DESIGN LOOKS LIKE THIS (read before changing anything)
-----------------------------------------------------------------------------
-1. ONE ARTICLE PER CALL. Each summary is generated in its own stateless request
-   with no other article in context, so there is zero cross-article
-   contamination and no position effects. This is essential for a per-article
-   compression measurement.
-
-2. IDENTICAL PROMPT. The same neutral prompt is sent to all three providers.
-   It deliberately says nothing about "balance" or "both sides" -- we want to
-   observe each model's DEFAULT behavior, which is what real users get.
-
-3. SAMPLING SETTINGS -- IMPORTANT ASYMMETRY ACROSS PROVIDERS.
-   As of mid-2026:
-     * Newest Claude models (Opus 4.7+/4.8) REJECT a custom temperature (400 error).
-     * Newest OpenAI models (GPT-5 family) only accept the default temperature (1).
-     * Grok (xAI) still accepts temperature normally.
-   You therefore CANNOT set temperature=0 uniformly on the latest models.
-   Pick ONE of two strategies and keep it consistent (see DETERMINISM_MODE):
-     - "older_models": use models that still accept temperature=0 on all three
-       providers, for maximum determinism and cross-model comparability.
-     - "newest_models": use the latest models, omit temperature everywhere, and
-       rely on REPLICATES (multiple runs per article) to characterize variance.
-   This script handles both; just set the constants below.
-
-4. REPLICATES. Each article is summarized N_RUNS times per model so you can
-   measure output stability (important when temperature can't be pinned to 0).
-
-5. FULL PROVENANCE. Every row records the exact model string, run index,
-   timestamp, token usage, and the verbatim summary, so results are reproducible.
-----------------------------------------------------------------------------
-
 SETUP
 -----
     pip install anthropic openai pandas
@@ -75,10 +43,6 @@ import sys
 import time
 import datetime as dt
 
-# ----------------------------------------------------------------------------
-# CONFIGURATION  -- edit these to match your final study design
-# ----------------------------------------------------------------------------
-
 DETERMINISM_MODE = "older_models"   # "older_models" or "newest_models"
 
 # Model strings per provider for each mode. Update these to the exact models you
@@ -98,8 +62,6 @@ MODELS = {
     },
 }
 
-# The single shared prompt. {article} is filled with the article body.
-# Note: intentionally NEUTRAL -- no mention of balance, fairness, or "both sides".
 PROMPT_TEMPLATE = (
     "Summarize the following news article in 150-200 words. "
     "Write in neutral, third-person prose. "
@@ -107,8 +69,6 @@ PROMPT_TEMPLATE = (
     "ARTICLE:\n{article}"
 )
 
-# Optional system prompt. Keep identical across providers, or set to None.
-# Using None (no system prompt) is the cleanest, most defensible choice.
 SYSTEM_PROMPT = None
 
 N_RUNS = 1            # replicates per article per model
@@ -118,10 +78,6 @@ TEMPERATURE = 0.0    # used ONLY in "older_models" mode / for Grok
 # Retry settings for transient API errors / rate limits.
 MAX_RETRIES = 5
 BACKOFF_BASE = 2.0   # seconds; exponential: 2, 4, 8, 16, 32
-
-# ----------------------------------------------------------------------------
-# Provider client wrappers
-# ----------------------------------------------------------------------------
 
 def _supports_temperature(provider: str) -> bool:
     """Whether to send a temperature param for this provider in the chosen mode."""
@@ -194,10 +150,6 @@ def build_client(provider):
     return OpenAICompatibleClient(provider)
 
 
-# ----------------------------------------------------------------------------
-# Retry wrapper
-# ----------------------------------------------------------------------------
-
 def with_retries(fn, *args):
     last_err = None
     for attempt in range(MAX_RETRIES):
@@ -211,10 +163,6 @@ def with_retries(fn, *args):
             time.sleep(wait)
     raise RuntimeError(f"Failed after {MAX_RETRIES} retries: {last_err}")
 
-
-# ----------------------------------------------------------------------------
-# Main
-# ----------------------------------------------------------------------------
 
 def load_articles(path):
     with open(path, newline="", encoding="utf-8") as f:
