@@ -1,5 +1,4 @@
 # Gov-Final-Project
-# Gov-Final-Project
 
 Summarizes a fixed set of news articles using three LLMs — Claude (Anthropic),
 ChatGPT (OpenAI), and Grok (xAI) — under identical conditions so their outputs can
