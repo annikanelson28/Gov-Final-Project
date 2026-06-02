@@ -1,0 +1,22 @@
+# Core data handling and numerics
+pandas
+numpy
+scipy
+
+# Statistical models
+#   - statsmodels provides the beta regression (valence, primary test),
+#     one-sample/paired t-tests, ANOVA, and Tukey HSD post-hoc
+statsmodels
+
+# Charting
+matplotlib
+
+# Secondary metric (BERTScore). Optional — only needed to re-run
+# 1_compute_bertscore.py. If bert-score / torch are unavailable, that
+# script falls back to sentence-transformers cosine similarity.
+bert-score
+torch
+
+# Fallback similarity backend (used only if bert-score / torch are missing)
+sentence-transformers
+scikit-learn

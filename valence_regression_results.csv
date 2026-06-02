@@ -1,0 +1,4 @@
+model,n_texts,mean_valence_original,mean_valence_summary,is_summary_coef,robust_se,p_value,significant,direction
+claude,120,0.5661,0.6403,0.4644,0.2038,0.0227,YES,more liberal
+chat,120,0.5661,0.6212,0.2639,0.1932,0.172,no,more liberal
+groc,120,0.5661,0.5222,-0.1315,0.1592,0.4088,no,more conservative
